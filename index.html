@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Bingo System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    gridTemplateColumns: {
+                        '15': 'repeat(15, minmax(0, 1fr))'
+                    },
+                    animation: {
+                        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                    },
+                    keyframes: {
+                        pulse: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.5' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+        .bingo-cell {
+            font-size: 60%;
+        }
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 4px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        .pattern-cell {
+            aspect-ratio: 1;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .pattern-cell:hover {
+            border-color: #4CAF50;
+        }
+        .pattern-cell.selected {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .ball-called {
+            background-color: #4CAF50 !important;
+            color: white !important;
+            transform: scale(1.05);
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+            border-color: #4CAF50 !important;
+        }
+        #ballDisplay .grid-cols-5 > div {
+            display: grid;
+            grid-template-rows: repeat(15, minmax(0, 1fr));
+            gap: 4px;
+        }
+        .number-cell {
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .number-cell:hover {
+            background-color: #f3f4f6;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Pre-game Setup Section -->
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">Digital Bingo System</h1>
+        
+        <!-- Card Series Input -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+                <i class="fas fa-cog text-blue-500"></i> Pre-game Setup
+            </h2>
+            <div class="mb-6">
+                <label class="block text-gray-700 font-medium mb-2">Batch Number:</label>
+                <input type="text" id="batchNumber" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 font-medium mb-2">Valid Card Series (CSV format):</label>
+                <textarea id="cardSeries" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors" rows="4" placeholder="Enter comma-separated card series numbers"></textarea>
+            </div>
+            <button id="loadCards" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors duration-200 font-semibold flex items-center gap-2">
+                <i class="fas fa-upload"></i>
+                Load Cards
+            </button>
+        </div>
+
+        <!-- Pattern Editor -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+                <i class="fas fa-edit text-green-500"></i> Pattern Editor
+            </h2>
+            <div class="flex space-x-4 mb-4">
+                <input type="text" id="patternName" placeholder="Enter pattern name" class="flex-1 p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors">
+                <button id="savePattern" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors duration-200 font-semibold flex items-center gap-2">
+                    <i class="fas fa-save"></i> Save Pattern
+                </button>
+            </div>
+            <div class="pattern-grid mb-6" id="patternEditor">
+                <!-- Pattern cells will be generated by JavaScript -->
+            </div>
+            <div class="mt-6">
+                <h3 class="font-semibold mb-3">Saved Patterns:</h3>
+                <div id="patternList" class="space-y-3">
+                    <!-- Pattern list will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Setup -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+                <i class="fas fa-gamepad text-blue-500"></i> Game Setup
+            </h2>
+            <div class="mb-6">
+                <label class="block text-gray-700 font-medium mb-2">Number of Rounds:</label>
+                <input type="number" id="numRounds" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors" min="1" placeholder="Enter number of rounds">
+            </div>
+            <button id="startGame" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors duration-200 font-semibold flex items-center gap-2">
+                <i class="fas fa-play"></i> Start Game
+            </button>
+        </div>
+
+        <!-- Ball Display -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+                <i class="fas fa-th text-blue-500"></i> Called Numbers
+            </h2>
+            <div class="overflow-x-auto bg-gray-50 rounded-lg p-8">
+                <div class="mx-auto" id="ballDisplay">
+                    <!-- Ball numbers will be generated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Winner Verification -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+                <i class="fas fa-trophy text-green-500"></i> Winner Verification
+            </h2>
+            <div class="mb-6">
+                <label class="block text-gray-700 font-medium mb-2">Card Series Number:</label>
+                <input type="text" id="winningCard" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="Enter winning card series number">
+            </div>
+            <button id="verifyWinner" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors duration-200 font-semibold flex items-center gap-2">
+                <i class="fas fa-check-circle"></i> Verify Winner
+            </button>
+        </div>
+    </div>
+
+    <!-- Winning Card Popup -->
+    <div id="winningCardPopup" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-lg w-full">
+            <div class="text-right mb-4 p-2">
+                <button class="text-gray-500 hover:text-gray-700 text-xl" onclick="closeWinningCardPopup()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">Winning Card</h3>
+                <p class="text-gray-600 text-lg" id="batchNumberDisplay"></p>
+            </div>
+            <div class="grid grid-cols-5 gap-2 mb-4" id="winningCardGrid">
+                <!-- Winning card will be generated by JavaScript -->
+            </div>
+            <div class="text-left mt-6">
+                <p class="text-base text-gray-600 font-medium" id="seriesNumberDisplay"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unclick Confirmation Popup -->
+    <div id="unclickPopup" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg">
+            <h3 class="text-xl font-bold mb-4">Confirm Unclick</h3>
+            <p class="mb-4">Are you sure you want to unclick this number?</p>
+            <div class="flex justify-end space-x-4">
+                <button class="px-6 py-3 bg-gray-300 rounded-lg hover:bg-gray-400 transition-colors duration-200 font-semibold" onclick="closeUnclickPopup()">
+                    Cancel
+                </button>
+                <button class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 font-semibold" onclick="confirmUnclick()">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="patterns.js"></script>
+    <script src="cards.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
